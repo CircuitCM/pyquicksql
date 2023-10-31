@@ -1,1 +1,1 @@
-'# PyQuickSQL' 
+# PyQuickSQL

@@ -79,6 +79,20 @@ def test_cache(*args, **kwargs):
     return args, kwargs
 
 
+class NoStr:
+
+    __slots__=('string',)
+
+    def __init__(self,string:str):
+        self.string=string
+
+    def __str__(self):
+        return self.string
+
+    def __repr__(self):
+        return self.string
+
+
 class Query:
     """
     This is a convenience wrapper to generate SQL queries with named variables. It is basically the same as a lambda **g: f-string

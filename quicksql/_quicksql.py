@@ -3,13 +3,14 @@ import pickle as pkl
 import os 
 from functools import cache
 import re
+import copy
 
 _mem_cache = {}
 cache_dir = os.environ.get('QQ_CACHE_DIR', None)
 if cache_dir is None:
     import tempfile
     cache_dir=os.path.join(tempfile.gettempdir(),'qqcache')
-    os.makedirs(cache_dir, exist_ok=True)
+os.makedirs(cache_dir, exist_ok=True)
 
 _FQS = re.compile(r"--\s*name\s*:\s*")
 _FNAM = re.compile(r"\W")
@@ -31,21 +32,18 @@ def file_cache(use_mem_cache=True):
     def wrapper1(func):
         def wrapper(*args, **kwargs):
             #Change this to a uuid hash that has low enough collision improbability.
-            key=re.sub(r'\s','_',re.sub(r"[^A-Za-z\s]", '', str([*args, *kwargs.items()])))[:256]
+            key=re.sub(r'\s','_',re.sub(r"[^A-Za-z0-9\s]", '', str([*args, *kwargs.items()])))[:256]
             c_name= f'{func.__name__}_{key}'
             file_name = os.path.join(cache_dir,f"{c_name}.pkl")
             if use_mem_cache:
                 val = _mem_cache.get(c_name, _NA())
                 incache = type(val) is not _NA
                 if incache:
-                    return val
+                    return copy.deepcopy(val)
             try:
                 with open(file_name, 'rb') as file:
                     result = pkl.load(file)
             except FileNotFoundError:
-                f_dir=os.path.dirname(file_name)
-                if not os.path.exists(f_dir):
-                    os.makedirs(f_dir)
                 result = func(*args, **kwargs)
                 #File cache is always a backup so restarting an interpreter is safe, Need to explicitly clear cache if the remote dataset changes
                 with open(file_name, 'wb') as file:
@@ -66,11 +64,11 @@ def clear_cache(clr_mem=True, clr_file=True):
 
     if clr_mem:
         _mem_cache.clear()
-        print("Memory cache cleared")
+        print("Memory cache cleared.")
     if clr_file:
         for file in os.listdir(cache_dir):
             os.remove(os.path.join(cache_dir, file))
-        print("File cache cleared")
+        print("File cache cleared.")
 
 
 #need to add closed parentheses for it to work idk why, maybe an optional arg thing.
@@ -129,7 +127,6 @@ class Query:
 
 
 
-
 class LoadSQL:
     """
     An object that holds all the named queries from a .sql file.
@@ -167,6 +164,6 @@ class LoadSQL:
         return f"Queries from:: {self.path}\n\n{_s.join([str(qr) for nm, qr in self.__dict__.items() if nm != 'path']) if len(self.__dict__) > 1 else 'No queries found.'}"
 
     @cache
-    def _repr__(self):
+    def __repr__(self):
         _s = '\n'
         return f"LoadSQL({self.path})\n{_s.join([f'Query Name: '+nm+', Params: '+', '.join(qr.vars) for nm, qr in self.__dict__.items() if nm != 'path']) if len(self.__dict__) > 1 else 'No queries found.'}"

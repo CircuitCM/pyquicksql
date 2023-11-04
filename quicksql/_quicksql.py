@@ -1,20 +1,20 @@
-import uuid as _id
-import pickle as _pkl
-import os as _os
-from functools import cache as _cache
-import re as _re
+import uuid as id
+import pickle as pkl
+import os 
+from functools import cache
+import re
 
 _mem_cache = {}
-cache_dir = _os.environ.get('QQ_CACHE_DIR', None)
+cache_dir = os.environ.get('QQ_CACHE_DIR', None)
 if cache_dir is None:
     import tempfile
-    cache_dir=_os.path.join(tempfile.gettempdir(),'qqcache')
-    _os.makedirs(cache_dir, exist_ok=True)
+    cache_dir=os.path.join(tempfile.gettempdir(),'qqcache')
+    os.makedirs(cache_dir, exist_ok=True)
 
-_FQS = _re.compile(r"--\s*name\s*:\s*")
-_FNAM = _re.compile(r"\W")
+_FQS = re.compile(r"--\s*name\s*:\s*")
+_FNAM = re.compile(r"\W")
 #the previous regex but includes
-_VIN = _re.compile(r":\w+")
+_VIN = re.compile(r":\w+")
 
 
 class _NA(object): #so None is still valid
@@ -30,10 +30,10 @@ def file_cache(use_mem_cache=True):
 
     def wrapper1(func):
         def wrapper(*args, **kwargs):
-            #so its readable and too lazy to figure out a unique type hash, so don't use long collections as args unless most of the query is before it.
-            key=_re.sub(r'\s','_',_re.sub(r"[^A-Za-z\s]", '', str([*args, *kwargs.items()])))[:256]
+            #Change this to a uuid hash that has low enough collision improbability.
+            key=re.sub(r'\s','_',re.sub(r"[^A-Za-z\s]", '', str([*args, *kwargs.items()])))[:256]
             c_name= f'{func.__name__}_{key}'
-            file_name = _os.path.join(cache_dir,f"{c_name}.pkl")
+            file_name = os.path.join(cache_dir,f"{c_name}.pkl")
             if use_mem_cache:
                 val = _mem_cache.get(c_name, _NA())
                 incache = type(val) is not _NA
@@ -41,15 +41,15 @@ def file_cache(use_mem_cache=True):
                     return val
             try:
                 with open(file_name, 'rb') as file:
-                    result = _pkl.load(file)
+                    result = pkl.load(file)
             except FileNotFoundError:
-                f_dir=_os.path.dirname(file_name)
-                if not _os.path.exists(f_dir):
-                    _os.makedirs(f_dir)
+                f_dir=os.path.dirname(file_name)
+                if not os.path.exists(f_dir):
+                    os.makedirs(f_dir)
                 result = func(*args, **kwargs)
                 #File cache is always a backup so restarting an interpreter is safe, Need to explicitly clear cache if the remote dataset changes
                 with open(file_name, 'wb') as file:
-                    _pkl.dump(result, file)
+                    pkl.dump(result, file)
             if use_mem_cache:
                 _mem_cache[c_name] = result
             return result
@@ -68,8 +68,8 @@ def clear_cache(clr_mem=True, clr_file=True):
         _mem_cache.clear()
         print("Memory cache cleared")
     if clr_file:
-        for file in _os.listdir(cache_dir):
-            _os.remove(_os.path.join(cache_dir, file))
+        for file in os.listdir(cache_dir):
+            os.remove(os.path.join(cache_dir, file))
         print("File cache cleared")
 
 
@@ -89,7 +89,7 @@ class NoStr:
     def __str__(self):
         return self.string
 
-    def __repr__(self):
+    def _repr__(self):
         return self.string
 
 
@@ -123,7 +123,7 @@ class Query:
             print(f"Unused variables: {', '.join(chk_nkg)} in query {self.name}")
         return oq
 
-    @_cache
+    @cache
     def __str__(self):
         return f"-- Query:: {self.name}\n{self.query}"
 
@@ -161,12 +161,12 @@ class LoadSQL:
 
             setattr(self, name, Query(name, query.rstrip()))
 
-    @_cache
+    @cache
     def __str__(self):
         _s = '\n\n'
         return f"Queries from:: {self.path}\n\n{_s.join([str(qr) for nm, qr in self.__dict__.items() if nm != 'path']) if len(self.__dict__) > 1 else 'No queries found.'}"
 
-    @_cache
-    def __repr__(self):
+    @cache
+    def _repr__(self):
         _s = '\n'
         return f"LoadSQL({self.path})\n{_s.join([f'Query Name: '+nm+', Params: '+', '.join(qr.vars) for nm, qr in self.__dict__.items() if nm != 'path']) if len(self.__dict__) > 1 else 'No queries found.'}"

@@ -93,7 +93,7 @@ class Query:
 
         self.name = name
         self.query = query
-        self._rvrs=_VIN.findall(query)
+        self._rvrs=list({vr for vr in _VIN.findall(query)}) #to remove duplicate keys
         self.vars = [v[1:] for v in self._rvrs]
 
     def __call__(self, **kwargs):

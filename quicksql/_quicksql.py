@@ -89,7 +89,7 @@ class NoStr:
     def __str__(self):
         return self.string
 
-    def _repr__(self):
+    def __repr__(self):
         return self.string
 
 

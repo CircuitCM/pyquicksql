@@ -17,7 +17,11 @@ They are equivalent to an f-string + a lambda but loaded from an sql file and st
   
 How to use them:
 ```python
-print(queries.examplequery_2(product_id=10,sdate='1-10-2022',edate=qq.NoStr("DATE'4-11-2023'"),something_not_a_param='test'))
+print(queries.examplequery_2(
+    product_id=10,
+    sdate='1-10-2022',
+    edate=qq.NoStr("DATE'4-11-2023'"),
+    something_not_a_param='test'))
 ```
 ```text
 Unused variables: something_not_a_param in query examplequery_2

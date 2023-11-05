@@ -40,11 +40,10 @@ def _sf(name,result):
 
 
 def _make_key(*args,**kwargs):
-    return hl.blake2b(js.dumps(*(args, kwargs),option=_alljopts),usedforsecurity=False).hexdigest()
+    return hl.blake2b(js.dumps((args, kwargs),option=_alljopts),usedforsecurity=False).hexdigest()
 
 
-#files will be loaded in even with new interpreter run, unless use_mem_cache=True
-def file_cache(use_mem_cache=True,threadsafe=True): #if your assets aren't threadsafe for deepcopy, and your function is async, set threadsafe=True
+def file_cache(use_mem_cache=True,threadsafe=True):
     """
     :param use_mem_cache: If true, will cache in memory as well as file
     :param threadsafe: If false, and your function is async, will deepcopy the result in a separate thread to not block, for small assets false is probably a bit slower.
@@ -55,7 +54,6 @@ def file_cache(use_mem_cache=True,threadsafe=True): #if your assets aren't threa
         isco,iscofun= aio.iscoroutinefunction(func), aio.iscoroutine(func)
         if isco or iscofun:
             async def wrapper(*args, **kwargs):
-                #Change this to a uuid hash that has low enough collision improbability.
                 nargs=args+(func.__name__,)
                 key=_make_key(*nargs,**kwargs)
                 file_name = os.path.join(cache_dir,f"{key}.pkl")
@@ -81,7 +79,6 @@ def file_cache(use_mem_cache=True,threadsafe=True): #if your assets aren't threa
                 return result
         else:
             def wrapper(*args, **kwargs):
-                #Change this to a uuid hash that has low enough collision improbability.
                 nargs=args+(func.__name__,)
                 key = _make_key(*nargs, **kwargs)
                 file_name = os.path.join(cache_dir,f"{key}.pkl")

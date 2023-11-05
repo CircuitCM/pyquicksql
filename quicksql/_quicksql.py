@@ -4,6 +4,9 @@ import os
 from functools import cache
 import re
 import copy
+import asyncio as aio
+import hashlib as hl
+import orjson as js
 
 _mem_cache = {}
 cache_dir = os.environ.get('QQ_CACHE_DIR', None)
@@ -16,41 +19,89 @@ _FQS = re.compile(r"--\s*name\s*:\s*")
 _FNAM = re.compile(r"\W")
 #the previous regex but includes
 _VIN = re.compile(r":\w+")
+_alljopts=js.OPT_SERIALIZE_DATACLASS|js.OPT_SERIALIZE_NUMPY|js.OPT_SERIALIZE_UUID|js.OPT_NAIVE_UTC|js.OPT_NON_STR_KEYS
+
 
 
 class _NA(object): #so None is still valid
     pass
 
+def _lf(name):
+    try:
+        with open(name, 'rb') as file:
+            result = pkl.load(file)
+        return result
+    except FileNotFoundError:
+        return _NA()
+
+def _sf(name,result):
+    with open(name, 'wb') as file:
+        pkl.dump(result, file)
+
+
+def _make_key(*args,**kwargs):
+    return hl.blake2b(js.dumps(*(args, kwargs),option=_alljopts),usedforsecurity=False).hexdigest()
+
 
 #files will be loaded in even with new interpreter run, unless use_mem_cache=True
-def file_cache(use_mem_cache=True):
+def file_cache(use_mem_cache=True,threadsafe=True): #if your assets aren't threadsafe for deepcopy, and your function is async, set threadsafe=True
     """
     :param use_mem_cache: If true, will cache in memory as well as file
+    :param threadsafe: If false, and your function is async, will deepcopy the result in a separate thread to not block, for small assets false is probably a bit slower.
     :return: A decorator that will cache the result of a function in a file
     """
 
     def wrapper1(func):
-        def wrapper(*args, **kwargs):
-            #Change this to a uuid hash that has low enough collision improbability.
-            key=re.sub(r'\s','_',re.sub(r"[^A-Za-z0-9\s]", '', str([*args, *kwargs.items()])))[:256]
-            c_name= f'{func.__name__}_{key}'
-            file_name = os.path.join(cache_dir,f"{c_name}.pkl")
-            if use_mem_cache:
-                val = _mem_cache.get(c_name, _NA())
-                incache = type(val) is not _NA
-                if incache:
-                    return copy.deepcopy(val)
-            try:
-                with open(file_name, 'rb') as file:
-                    result = pkl.load(file)
-            except FileNotFoundError:
-                result = func(*args, **kwargs)
-                #File cache is always a backup so restarting an interpreter is safe, Need to explicitly clear cache if the remote dataset changes
-                with open(file_name, 'wb') as file:
-                    pkl.dump(result, file)
-            if use_mem_cache:
-                _mem_cache[c_name] = result
-            return result
+        isco,iscofun= aio.iscoroutinefunction(func), aio.iscoroutine(func)
+        if isco or iscofun:
+            async def wrapper(*args, **kwargs):
+                #Change this to a uuid hash that has low enough collision improbability.
+                nargs=args+(func.__name__,)
+                key=_make_key(*nargs,**kwargs)
+                file_name = os.path.join(cache_dir,f"{key}.pkl")
+                if use_mem_cache:
+                    val = _mem_cache.get(key, _NA())
+                    incache = type(val) is not _NA
+                    if incache:
+                        if threadsafe:
+                            return copy.deepcopy(val)
+                        else:
+                            return await aio.get_running_loop().run_in_executor(None,copy.deepcopy,val)
+
+                result = await aio.get_running_loop().run_in_executor(None,_lf,file_name,)
+                if type(result) is _NA:
+                    if isco:
+                        result = await func(*args, **kwargs)
+                    else:
+                        result = await func
+                    #File cache is always a backup so restarting an interpreter is safe, Need to explicitly clear cache if the remote dataset changes
+                    await aio.get_running_loop().run_in_executor(None,_sf,file_name,result)
+                if use_mem_cache:
+                    _mem_cache[key] = result
+                return result
+        else:
+            def wrapper(*args, **kwargs):
+                #Change this to a uuid hash that has low enough collision improbability.
+                nargs=args+(func.__name__,)
+                key = _make_key(*nargs, **kwargs)
+                file_name = os.path.join(cache_dir,f"{key}.pkl")
+                if use_mem_cache:
+                    val = _mem_cache.get(key, _NA())
+                    incache = type(val) is not _NA
+                    if incache:
+                        return copy.deepcopy(val)
+                try:
+                    with open(file_name, 'rb') as file:
+                        result = pkl.load(file)
+                except FileNotFoundError:
+                    result = func(*args, **kwargs)
+                    #File cache is always a backup so restarting an interpreter is safe, Need to explicitly clear cache if the remote dataset changes
+                    with open(file_name, 'wb') as file:
+                        pkl.dump(result, file)
+                if use_mem_cache:
+                    _mem_cache[key] = result
+                return result
+
         return wrapper
     return wrapper1
 

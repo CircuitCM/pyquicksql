@@ -1,5 +1,5 @@
 # PyQuickSQL
-For a more thorough explanation see [example.ipynb](example.ipynb)  
+For a more thorough explanation see [example.ipynb](https://github.com/CircuitCM/pyquicksql/blob/main/example.ipynb)  
 ### How to use the query loader:
 ```python
 import quicksql as qq
@@ -63,4 +63,4 @@ print(test_mem(8))
 
 To clear the cache: `qq.clear_cache()`
 
-For more examples and how to configure see [example.ipynb](example.ipynb)
+For more examples and how to configure see [example.ipynb](https://github.com/CircuitCM/pyquicksql/blob/main/example.ipynb)

@@ -66,16 +66,16 @@ def file_cache(use_mem_cache=True,threadsafe=True): #if your assets aren't threa
                         if threadsafe:
                             return copy.deepcopy(val)
                         else:
-                            return await aio.get_running_loop().run_in_executor(None,copy.deepcopy,val)
+                            return await aio.get_running_loop().run_in_executor(None, copy.deepcopy, val)
 
-                result = await aio.get_running_loop().run_in_executor(None,_lf,file_name,)
+                result = await aio.get_running_loop().run_in_executor(None, _lf, file_name)
                 if type(result) is _NA:
                     if isco:
                         result = await func(*args, **kwargs)
                     else:
                         result = await func
                     #File cache is always a backup so restarting an interpreter is safe, Need to explicitly clear cache if the remote dataset changes
-                    await aio.get_running_loop().run_in_executor(None,_sf,file_name,result)
+                    await aio.get_running_loop().run_in_executor(None,_sf, file_name, result)
                 if use_mem_cache:
                     _mem_cache[key] = result
                 return result

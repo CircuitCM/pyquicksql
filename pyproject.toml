@@ -13,3 +13,6 @@ dependencies = ["orjson"]
 
 [project.urls]
 Home = "https://github.com/CircuitCM/pyquicksql"
+
+[tool.flit.module]
+name = "quicksql"

@@ -17,8 +17,7 @@ os.makedirs(cache_dir, exist_ok=True)
 
 _FQS = re.compile(r"--\s*name\s*:\s*")
 _FNAM = re.compile(r"\W")
-#the previous regex but includes
-_VIN = re.compile(r":\w+")
+_VIN = re.compile(r"(?<!:):\w+")
 _alljopts=js.OPT_SERIALIZE_DATACLASS|js.OPT_SERIALIZE_NUMPY|js.OPT_SERIALIZE_UUID|js.OPT_NAIVE_UTC|js.OPT_NON_STR_KEYS
 
 

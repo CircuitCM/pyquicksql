@@ -46,7 +46,7 @@ ORDER BY
 
 ### How to use the file cache:
 This is very similar to functool's `cache`, with the main difference being that `@qq.file_cache` caches the asset to memory
-and to you system's default temporary directory. If the memory cache ever fails (eg a restarted kernel) it will load the asset from it's pickled file.
+and to your system's default temporary directory. If the memory cache ever fails (eg a restarted kernel) it will load the asset from it's pickled file.
 ```python
 from random import randint
 import quicksql as qq

@@ -1,5 +1,7 @@
+
+
 # PyQuickSQL
-For a more thorough explanation see [example.ipynb](https://github.com/CircuitCM/pyquicksql/blob/main/example.ipynb)  
+For a more thorough explanation see [example.md](https://github.com/CircuitCM/pyquicksql/blob/main/example.md)  
 To install: `pip install qsql`  
 ### How to use the query loader:
 ```python

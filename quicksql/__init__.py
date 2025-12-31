@@ -3,3 +3,5 @@
 __version__ = '1.0.1'
 
 from ._quicksql import file_cache,test_cache,Query,LoadSQL,clear_cache,NoStr
+
+__all__ = ["file_cache", "test_cache", "Query", "LoadSQL", "clear_cache", "NoStr"]

@@ -48,7 +48,6 @@ def file_cache(use_mem_cache=True,threadsafe=True):
     :param threadsafe: If false, and your function is async, will deepcopy the result in a separate thread to not block, for small assets false is probably a bit slower.
     :return: A decorator that will cache the result of a function in a file
     """
-
     def wrapper1(func):
         isco,iscofun= aio.iscoroutinefunction(func), aio.iscoroutine(func)
         if isco or iscofun:

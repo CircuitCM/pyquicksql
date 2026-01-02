@@ -1,4 +1,3 @@
-import uuid as id
 import pickle as pkl
 import os 
 from functools import cache
@@ -44,8 +43,8 @@ def _make_key(*args,**kwargs):
 
 def file_cache(use_mem_cache=True,threadsafe=True):
     """
-    :param use_mem_cache: If true, will cache in memory as well as file
-    :param threadsafe: If false, and your function is async, will deepcopy the result in a separate thread to not block, for small assets false is probably a bit slower.
+    :param use_mem_cache: If true, will cache in memory as well as file.
+    :param threadsafe: As in, is it a threadsafe asset? If false, and your function is async, will deepcopy the result in a separate thread to not block, for small assets false is probably a bit slower. Otherwise it will deep copy in the same synchronous thread.
     :return: A decorator that will cache the result of a function in a file
     """
     def wrapper1(func):
